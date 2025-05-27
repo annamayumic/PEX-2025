@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadro Kanban</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Kanban Contador</h1>
+        <div class="kanban">
+            <div class="column">
+                <h2>A Fazer</h2>
+                <div class="task" id="todo"></div>
+            </div>
+            <div class="column">
+                <h2>Em Progresso</h2>
+                <div class="task" id="in-progress"></div>
+            </div>
+            <div class="column">
+                <h2>Concluído</h2>
+                <div class="task" id="done"></div>
+            </div>
+        </div>
+        <button onclick="window.location.href='form.html'">Adicionar Tarefa</button>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:5230/api/tasks';
+
+        
+        async function fetchTasks() {
+            try {
+                const response = await fetch(apiUrl);
+                const tasks = await response.json();
+
+                
+                const todoColumn = document.getElementById('todo');
+                const inProgressColumn = document.getElementById('in-progress');
+                const doneColumn = document.getElementById('done');
+
+                
+                todoColumn.innerHTML = '';
+                inProgressColumn.innerHTML = '';
+                doneColumn.innerHTML = '';
+
+                
+                tasks.forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = 'task-item';
+                    taskElement.innerHTML = ` - nome do cliente: ${task.clientName}<br> - serviço: ${task.serviceName}<br> - data: ${task.date}<br> - valor: R$${task.price}<br>`;
+
+                    
+                    if (task.status === 'a fazer' || task.status === 'fazendo') {
+                        const doneButton = document.createElement('button');
+                        doneButton.textContent = 'Concluído';
+                        doneButton.onclick = async () => {
+                            console.log(`Atualizando tarefa ID: ${task.id}, Status atual: ${task.status}`);
+                            await updateTaskStatus(task.id, task.status);
+                        };
+                        taskElement.appendChild(doneButton);
+                    }
+
+                    switch (task.status) {
+                        case 'a fazer':
+                            todoColumn.appendChild(taskElement);
+                            break;
+                        case 'fazendo':
+                            inProgressColumn.appendChild(taskElement);
+                            break;
+                        case 'feito':
+                            doneColumn.appendChild(taskElement);
+                            break;
+                        default:
+                            console.warn(`Status desconhecido: ${task.status}`);
+                    }
+                });
+            } catch (error) {
+                console.error('Erro ao buscar tarefas:', error);
+            }
+        }
+
+        
+        async function updateTaskStatus(taskId, currentStatus) {
+        let newStatus;
+
+        
+        if (currentStatus === 'a fazer') {
+            newStatus = 'fazendo';
+        } else if (currentStatus === 'fazendo') {
+            newStatus = 'feito';
+        } else {
+            return;
+        }
+
+        try {
+            
+            const taskResponse = await fetch(`${apiUrl}/${taskId}`);
+            const taskData = await taskResponse.json();
+
+            
+            const updatedTask = {
+                ...taskData, 
+                status: newStatus 
+            };
+
+            const response = await fetch(`http://localhost:5230/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedTask), 
+            });
+
+            const responseData = await response.json(); 
+
+            if (response.ok) {
+                alert(`Tarefa marcada como ${newStatus}!`);
+                location.reload();
+            } else {
+                console.error('Resposta da API:', responseData); 
+                alert('Erro ao atualizar a tarefa: ' + (responseData.errors || response.statusText));
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar a tarefa:', error);
+            alert('Erro ao atualizar a tarefa. Tente novamente.');
+        }
+    }
+
+        window.onload = fetchTasks;
+
+    </script>
+</body>
+</html>

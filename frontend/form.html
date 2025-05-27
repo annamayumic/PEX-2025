@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Tarefa</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Criar Tarefa</h2>
+        <form id="taskForm">
+            <label for="clientName">Nome do Cliente:</label>
+            <input type="text" id="clientName" required><br>
+            <label for="serviceName">Nome do Serviço:</label>
+            <input type="text" id="serviceName" required><br>
+            <label for="date">Data:</label>
+            <input type="date" id="date" required><br>
+            <label for="price">Preço:</label>
+            <input type="number" id="price" required><br>
+            <input type="text" id="billing" hidden value="cobrar"><br>
+            <input type="text" id="status" hidden value="a fazer">
+            <button type="submit">Criar Tarefa</button>
+        </form>
+        <button onclick="window.location.href='index.html'">Voltar ao Quadro Kanban</button>
+    </div>
+
+    <script>
+        document.getElementById('taskForm').addEventListener('submit', async function(event) {
+        event.preventDefault(); 
+
+        
+        const clientName = document.getElementById('clientName').value;
+        const serviceName = document.getElementById('serviceName').value;
+        const date = document.getElementById('date').value;
+        const price = parseFloat(document.getElementById('price').value);
+        const billing = document.getElementById('billing').value;
+        const status = document.getElementById('status').value;
+
+        const taskData = {
+            clientName,
+            serviceName,
+            date,
+            price,
+            billing,
+            status
+        };
+
+        try {
+            const response = await fetch('http://localhost:5230/api/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(taskData),
+            });
+
+            if (response.ok) {
+                alert('Tarefa criada com sucesso!');
+                window.location.href = 'index.html';
+            } else {
+                alert('Erro ao criar a tarefa: ' + response.statusText);
+            }
+        } catch (error) {
+            console.error('Erro ao criar a tarefa:', error);
+            alert('Erro ao criar a tarefa. Tente novamente.');
+        }
+    });
+
+    </script>
+</body>
+</html>
